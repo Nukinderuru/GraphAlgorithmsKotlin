@@ -1,188 +1,174 @@
 # Simple Navigator — Graph Algorithms in Kotlin
 
-A Kotlin implementation of fundamental graph algorithms, ranging from graph traversal and shortest-path search to minimum spanning trees and heuristic solutions for the Traveling Salesman Problem.
+A Kotlin implementation of fundamental graph algorithms, from graph traversal and shortest-path search to minimum spanning trees and heuristic solutions for the Traveling Salesman Problem.
 
-The project provides a reusable graph representation, a collection of classical graph algorithms, custom stack and queue data structures, graph import/export functionality, and a console application for exploring and comparing the implemented algorithms.
+The project includes a reusable graph abstraction, custom stack and queue data structures, classical deterministic algorithms, three TSP metaheuristics, local 2-opt refinement, Graphviz export, unit tests, and an interactive console interface.
 
 ## Features
 
-### Graph Representation
+### Graph representation
 
-The `Graph` abstraction stores weighted graphs using an adjacency matrix and provides functionality for:
+The `Graph` abstraction stores weighted graphs using an adjacency matrix and supports:
 
-* loading graphs from files;
-* accessing vertices, edges, neighbors, and edge weights through a public API;
-* exporting graphs to the Graphviz DOT format.
+- loading a graph from a file;
+- accessing vertices, neighbors, and edge weights through a public API;
+- exporting a graph to Graphviz DOT format.
 
-The algorithm layer is separated from the internal graph representation: graph algorithms operate exclusively through the public `Graph` interface.
+`GraphAlgorithms` is intentionally decoupled from the graph's internal representation and operates only through the public `Graph` API.
 
-### Graph Traversal
+## Traversal
 
-Two fundamental traversal algorithms are implemented:
+### Depth-First Search
 
-* **Depth-First Search (DFS)** — iterative graph traversal using a custom stack implementation;
-* **Breadth-First Search (BFS)** — level-by-level graph traversal using a custom queue implementation.
+Iterative DFS is implemented using a custom stack.
 
-Both algorithms return vertices in traversal order starting from a specified vertex.
+<p>
+  <img src="docs/images/dfs.gif" alt="Depth-First Search animation" width=500>
+</p>
 
-### Shortest Paths
+### Breadth-First Search
 
-The project includes two classical shortest-path algorithms:
+BFS is implemented using a custom queue and explores the graph level by level.
 
-* **Dijkstra's algorithm** for finding the shortest distance between two selected vertices in a weighted graph;
-* **Floyd–Warshall algorithm** for computing shortest paths between every pair of vertices.
+<p>
+  <img src="docs/images/bfs.gif" alt="Breadth-First Search animation" width="500">
+</p>
 
-The latter produces a complete all-pairs shortest-path matrix.
+## Shortest paths
 
-### Minimum Spanning Tree
+### Dijkstra's algorithm
 
-A minimum spanning tree is constructed using **Prim's algorithm**.
+Finds the shortest distance between two selected vertices in a weighted graph.
 
-The algorithm connects all vertices while minimizing the total edge weight and returns the resulting tree as an adjacency matrix.
+<p>
+  <img src="docs/images/dijkstra.gif" alt="Dijkstra algorithm animation" width="283">
+</p>
+
+### Floyd–Warshall algorithm
+
+Computes shortest paths between every pair of vertices using dynamic programming over allowed intermediate vertices.
+
+<p>
+  <img src="docs/images/floyd-warshall.gif" alt="Floyd-Warshall dynamic programming scheme" width="364">
+</p>
+
+## Minimum spanning tree
+
+### Prim's algorithm
+
+Builds a minimum spanning tree by repeatedly attaching the cheapest edge that connects the growing tree to a new vertex.
+
+<p>
+  <img src="docs/images/prim.gif" alt="Prim minimum spanning tree animation" width="519">
+</p>
 
 ## Traveling Salesman Problem
 
-A significant part of the project explores heuristic and metaheuristic approaches to the **Traveling Salesman Problem (TSP)**.
-
-Three different optimization strategies are implemented and can be compared experimentally.
+The project explores three different metaheuristic approaches to the Traveling Salesman Problem.
 
 ### Ant Colony Optimization
 
-The primary TSP solver uses **Ant Colony Optimization (ACO)**.
+Artificial ants probabilistically construct tours using both local edge desirability and a shared pheromone matrix. Good tours reinforce their edges, while pheromone evaporation prevents the search from locking onto early choices too aggressively.
 
-Artificial ants probabilistically construct tours using a combination of:
-
-* pheromone levels accumulated on graph edges;
-* heuristic information based on edge weights;
-* pheromone evaporation;
-* reinforcement of promising routes.
-
-This allows the colony to gradually concentrate its search around high-quality tours while preserving enough randomness to explore alternative solutions.
+<p>
+  <img src="docs/images/aco.gif" alt="Ant Colony Optimization animation" width="860">
+</p>
 
 ### Genetic Algorithm
 
-The bonus implementation includes a **Genetic Algorithm (GA)** in which TSP tours are represented as permutations of graph vertices.
+The implementation evolves a population of candidate tours. TSP solutions are represented as permutations of graph vertices.
 
 The implementation uses:
 
-* a population of candidate tours;
-* greedy and randomized population initialization;
-* **Tournament Selection** for parent selection;
-* **elitism** to preserve the best individuals between generations;
-* **Order Crossover (OX)** for permutation-safe recombination;
-* **Swap Mutation** for maintaining population diversity;
-* deterministic random seeding for reproducible experiments.
+- greedy and randomized population initialization;
+- **Tournament Selection**;
+- **elitism**;
+- **Order Crossover (OX)**;
+- **Swap Mutation**;
+- deterministic random seeding for reproducible runs.
 
-The algorithm evolves the population over multiple generations while keeping track of the best valid tour discovered during the search.
+<p>
+  <img src="docs/images/genetic-algorithm.png" alt="Genetic Algorithm crossover and mutation animation" width="685">
+</p>
 
 ### Simulated Annealing
 
-The second bonus TSP solver uses **Simulated Annealing (SA)**.
+This solver explores one solution trajectory. Better neighbors are always accepted, while worse neighbors may still be accepted according to the current temperature. As the system cools, the search gradually changes from broad exploration to conservative local improvement.
 
-Starting from an initial tour, the algorithm repeatedly explores neighboring solutions. Improvements are accepted immediately, while worse solutions may also be accepted according to the current temperature and the Metropolis acceptance probability.
+<p>
+  <img src="docs/images/simulated-annealing.gif" alt="Simulated Annealing animation" width="500">
+</p>
 
-As the system gradually cools, the search transitions from broad exploration to increasingly conservative local optimization.
+### 2-opt local refinement
 
-This mechanism allows the algorithm to escape local optima that would trap a purely greedy local search.
+All heuristic TSP solutions are additionally refined using **2-opt**. The local search reverses route segments whenever doing so produces a shorter valid tour.
 
-### 2-opt Local Search
+<p>
+  <img src="docs/images/two-opt.gif" alt="2-opt local refinement animation" width="760">
+</p>
 
-Solutions produced by the heuristic TSP algorithms are additionally refined using **2-opt local search**.
-
-2-opt examines pairs of positions in the tour and reverses route segments when the resulting tour is shorter. This post-processing step removes inefficient local structures and helps improve solutions after the global search performed by ACO, GA, or SA.
-
-The combination demonstrates a common optimization strategy:
+This creates a useful hybrid pattern:
 
 > **global metaheuristic search → local refinement**
 
-## TSP Algorithm Comparison
+## TSP algorithm comparison
 
-The console application includes an experimental mode for comparing the three TSP solvers:
+The console application can benchmark all three TSP solvers on the currently loaded graph:
 
-* Ant Colony Optimization;
-* Genetic Algorithm;
-* Simulated Annealing.
+- Ant Colony Optimization;
+- Genetic Algorithm;
+- Simulated Annealing.
 
-For a loaded graph and a user-defined number of repetitions `N`, each solver is executed repeatedly and its total execution time is measured.
+For a user-defined number of repetitions `N`, each solver is executed repeatedly and its total execution time is measured.
 
-This provides a simple way to compare the computational cost of different metaheuristic approaches on the same problem instance.
+## Console application
 
-## Console Application
+The CLI supports:
 
-The project includes an interactive CLI that allows the user to:
+1. Loading a graph from a file.
+2. DFS traversal.
+3. BFS traversal.
+4. Finding the shortest path between two vertices.
+5. Computing all-pairs shortest paths.
+6. Building a minimum spanning tree.
+7. Solving the Traveling Salesman Problem.
+8. Comparing the runtime of multiple TSP algorithms.
+9. Exporting graphs to DOT.
 
-1. Load a graph from a file.
-2. Traverse it using BFS.
-3. Traverse it using DFS.
-4. Find the shortest path between two vertices using Dijkstra's algorithm.
-5. Compute all-pairs shortest paths using Floyd–Warshall.
-6. Build a minimum spanning tree using Prim's algorithm.
-7. Solve the Traveling Salesman Problem.
-8. Compare the performance of multiple TSP algorithms.
-9. Export graphs to Graphviz DOT format.
+## Algorithms at a glance
 
-## Algorithms at a Glance
+| Problem | Algorithm |
+|---|---|
+| Graph traversal | Depth-First Search |
+| Graph traversal | Breadth-First Search |
+| Single-pair shortest path | Dijkstra's algorithm |
+| All-pairs shortest paths | Floyd–Warshall algorithm |
+| Minimum spanning tree | Prim's algorithm |
+| Traveling Salesman Problem | Ant Colony Optimization |
+| Traveling Salesman Problem | Genetic Algorithm |
+| Traveling Salesman Problem | Simulated Annealing |
+| Tour refinement | 2-opt local search |
 
-| Problem                     | Algorithm                |
-| --------------------------- | ------------------------ |
-| Graph traversal             | Depth-First Search       |
-| Graph traversal             | Breadth-First Search     |
-| Single-source shortest path | Dijkstra's algorithm     |
-| All-pairs shortest paths    | Floyd–Warshall algorithm |
-| Minimum spanning tree       | Prim's algorithm         |
-| Traveling Salesman Problem  | Ant Colony Optimization  |
-| Traveling Salesman Problem  | Genetic Algorithm        |
-| Traveling Salesman Problem  | Simulated Annealing      |
-| Tour refinement             | 2-opt local search       |
+## What this project covers
 
-## Project Structure
+The project brings together several algorithmic ideas:
 
-The project follows a modular design that separates:
+- graph representation;
+- stacks and queues;
+- iterative graph traversal;
+- shortest-path algorithms;
+- dynamic programming;
+- greedy algorithms;
+- minimum spanning trees;
+- combinatorial optimization;
+- heuristic and metaheuristic search;
+- evolutionary algorithms;
+- local search;
+- reproducible benchmarking.
 
-* graph representation and I/O;
-* graph algorithms;
-* custom data structures;
-* TSP optimization strategies;
-* console interaction;
-* testing.
+## Tech stack
 
-This keeps algorithm implementations independent from the graph's internal storage details and makes individual components easier to test and extend.
-
-## What This Project Covers
-
-The project brings together several important areas of algorithms and data structures:
-
-* graph representation;
-* iterative graph traversal;
-* stacks and queues;
-* shortest-path algorithms;
-* dynamic programming;
-* greedy algorithms;
-* minimum spanning trees;
-* combinatorial optimization;
-* heuristic and metaheuristic search;
-* evolutionary algorithms;
-* local search;
-* algorithm benchmarking.
-
-Beyond implementing individual algorithms, the project provides an opportunity to compare fundamentally different approaches to optimization: deterministic classical algorithms, greedy construction, population-based search, probabilistic search, and local refinement.
-
-## Tech Stack
-
-* **Kotlin**
-* **Gradle / Makefile**
-* **Unit testing**
-* **Graphviz DOT** for graph export and visualization
-
-## Background
-
-This project is a Kotlin implementation of the School 21 **Simple Navigator** educational project.
-
-The original assignment focuses on implementing classical graph algorithms and an Ant Colony Optimization solver for the Traveling Salesman Problem. The optional extension requires two additional TSP algorithms and a comparative performance study.
-
-For this implementation, the bonus TSP solvers are:
-
-* **Genetic Algorithm**
-* **Simulated Annealing**
-
-Both are combined with **2-opt local refinement** to improve the final tours produced by the metaheuristic search.
+- **Kotlin**
+- **Makefile**
+- **Unit tests**
+- **Graphviz DOT**
